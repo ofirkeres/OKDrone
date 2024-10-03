@@ -1,0 +1,58 @@
+# Ignore build directories and outputs
+build/
+Debug/
+Release/
+
+# Ignore object files, ELF, map files and baniries
+*.o
+*.d
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+*.axf
+*.srec
+*.lnk
+*.dmp
+
+# Ignore CubeMX and IDE-specific files
+*.ioc
+*.launch
+*.project
+*.cproject
+*.depend
+*.ide
+
+# Ignore backup files and logs
+*~
+*.log
+*.bak
+*.swp
+
+# Ignore generated libraries
+*.a
+*.lib
+*.so
+
+# Ignore settings and workspace config files from VSCode or otherIDEs
+.vscode
+.idea
+*.code-workspace
+
+# Ignore compiled output or cached directories
+*.cache/
+*.cmake/
+CMakeFiles/
+
+# Ignore STM32CubeMX generated directories
+Middlewares/
+Drivers/
+Utilities/
+
+# Ignore firmware update forlders
+Firmware/
+
+# Ignore temporary files
+*.tmp
+*.temp
