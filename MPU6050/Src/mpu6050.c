@@ -20,18 +20,18 @@
 #define Y_AXES_IDX         (1 * sizeof(int16_t))
 #define Z_AXES_IDX         (2 * sizeof(int16_t))
 
-#define ACCL_GAIN_2G       (float)16384.0 /* Accel Full Scale Range +-2 Sensitivity LSB/g */
-#define ACCL_GAIN_4G       (float)8192.0  /* Accel Full Scale Range +-4 Sensitivity LSB/g */
-#define ACCL_GAIN_8G       (float)4096.0  /* Accel Full Scale Range +-8 Sensitivity LSB/g */
-#define ACCL_GAIN_16G      (float)2048.0  /* Accel Full Scale Range +-16 Sensitivity LSB/g */
+#define ACCL_SCALE_2G      (float)16384.0 /* Accelerometer Sensitivity +-2g  LSB/g */
+#define ACCL_SCALE_4G      (float)8192.0  /* Accelerometer Sensitivity +-4g  LSB/g */
+#define ACCL_SCALE_8G      (float)4096.0  /* Accelerometer Sensitivity +-8g  LSB/g */
+#define ACCL_SCALE_16G     (float)2048.0  /* Accelerometer Sensitivity +-16g LSB/g */
 
-#define GYRO_GAIN_250DPS   (float)131.0 /* Gyro Full Scale Range +-250 Degree/Sec Sensitivity LSB/g */
-#define GYRO_GAIN_500DPS   (float)65.5  /* Gyro Full Scale Range +-500 Degree/Sec Sensitivity LSB/g */
-#define GYRO_GAIN_1000DPS  (float)32.8  /* Gyro Full Scale Range +-1000 Degree/Sec Sensitivity LSB/g */
-#define GYRO_GAIN_2000DPS  (float)16.4  /* Gyro Full Scale Range +-2000 Degree/Sec Sensitivity LSB/g */
+#define GYRO_SCALE_250DPS   (float)131.0 /* Gyro Sensitivity +-250  Deg/Sec LSB/g */
+#define GYRO_SCALE_500DPS   (float)65.5  /* Gyro Sensitivity +-500  Deg/Sec LSB/g */
+#define GYRO_SCALE_1000DPS  (float)32.8  /* Gyro Sensitivity +-1000 Deg/Sec LSB/g */
+#define GYRO_SCALE_2000DPS  (float)16.4  /* Gyro Sensitivity +-2000 Deg/Sec LSB/g */
 
-#define ACCL_GAIN          ACCL_GAIN_2G
-#define GYRO_GAIN          GYRO_GAIN_250DPS
+#define ACCL_SCALE          ACCL_SCALE_2G
+#define GYRO_SCALE          GYRO_SCALE_250DPS
 
 typedef struct axes_16 {
     int16_t x;
@@ -42,6 +42,8 @@ typedef struct axes_16 {
 static HAL_StatusTypeDef mpu6050_write(uint16_t reg_addr, uint8_t* data, uint8_t size);
 static HAL_StatusTypeDef mpu6050_read(uint16_t reg_addr, uint8_t* data, uint8_t size);
 static int16_t read_int16_be(const uint8_t* data);
+static HAL_StatusTypeDef set_gyro_full_scale(gyro_fs_sel_e scale);
+static HAL_StatusTypeDef set_acc_full_scale(acc_fs_sel_e scale);
 
 static I2C_HandleTypeDef* mpu_i2c = NULL;
 
@@ -58,6 +60,48 @@ static HAL_StatusTypeDef mpu6050_read(uint16_t reg_addr, uint8_t* data, uint8_t 
 static int16_t read_int16_be(const uint8_t* data)
 {
     return (int16_t)(((uint16_t)data[0] << (sizeof(data[0]) * CHAR_BIT)) | data[1]);
+}
+
+static HAL_StatusTypeDef set_gyro_full_scale(gyro_fs_sel_e scale)
+{
+    uint8_t data = 0;
+
+    switch (scale)
+    {
+        case GYRO_FS_SEL_250:
+        case GYRO_FS_SEL_500:
+        case GYRO_FS_SEL_1000:
+        case GYRO_FS_SEL_2000:
+            break;
+
+        default:
+            scale = GYRO_FS_SEL_250;
+            break;
+    }
+
+    data |= (uint8_t)scale << GYRO_FS_SEL_POS;
+    return mpu6050_write(REG_GYRO_CONFIG, &data, sizeof(data));
+}
+
+static HAL_StatusTypeDef set_acc_full_scale(acc_fs_sel_e scale)
+{
+    uint8_t data = 0;
+
+    switch (scale)
+    {
+        case ACCL_FS_SEL_2G:
+        case ACCL_FS_SEL_4G:
+        case ACCL_FS_SEL_8G:
+        case ACCL_FS_SEL_16G:
+            break;
+
+        default:
+            scale = ACCL_FS_SEL_2G;
+            break;
+    }
+
+    data |= (uint8_t)scale << ACCL_FS_SEL_POS;
+    return mpu6050_write(REG_ACCL_CONFIG, &data, sizeof(data));
 }
 
 HAL_StatusTypeDef mpu6050_Init(I2C_HandleTypeDef *hi2c)
@@ -90,15 +134,13 @@ HAL_StatusTypeDef mpu6050_Init(I2C_HandleTypeDef *hi2c)
             }
 
             /* Set Accelerometer configuration in REG_ACCL_CONFIG register. */
-            data = 0x00; // XA_ST=0, YA_ST=0, ZA_ST=0, FS_SEL=0 -> +- 2g
-            write_status = mpu6050_write(REG_ACCL_CONFIG, &data, sizeof(data));
+            write_status = set_acc_full_scale(ACCL_FS_SEL_2G);
             if (write_status != HAL_OK) {
                 return write_status;
             }
 
             /* Set Gyroscope configuration in REG_GYRO_CONFIG register. */
-            data = 0x00; // XG_ST=0, YG_ST=0, ZG_ST=0, FS_SEL=0 -> +- 250 deg/s
-            write_status = mpu6050_write(REG_GYRO_CONFIG, &data, sizeof(data));
+            write_status = set_gyro_full_scale(GYRO_FS_SEL_250);
             if (write_status != HAL_OK) {
                 return write_status;
             }
@@ -135,9 +177,9 @@ HAL_StatusTypeDef mpu6050_read_acc(axes_float_t* acc)
         raw_acc.y = read_int16_be(buffer + Y_AXES_IDX);
         raw_acc.z = read_int16_be(buffer + Z_AXES_IDX);
 
-        acc->x = (float)raw_acc.x / ACCL_GAIN;
-        acc->y = (float)raw_acc.y / ACCL_GAIN;
-        acc->z = (float)raw_acc.z / ACCL_GAIN;
+        acc->x = (float)raw_acc.x / ACCL_SCALE;
+        acc->y = (float)raw_acc.y / ACCL_SCALE;
+        acc->z = (float)raw_acc.z / ACCL_SCALE;
     }
 
     return read_status;
@@ -156,9 +198,9 @@ HAL_StatusTypeDef mpu6050_read_gyro(axes_float_t* gyro)
         raw_gyro.y = read_int16_be(buffer + Y_AXES_IDX);
         raw_gyro.z = read_int16_be(buffer + Z_AXES_IDX);
 
-        gyro->x = (float)raw_gyro.x / GYRO_GAIN;
-        gyro->y = (float)raw_gyro.y / GYRO_GAIN;
-        gyro->z = (float)raw_gyro.z / GYRO_GAIN;
+        gyro->x = (float)raw_gyro.x / GYRO_SCALE;
+        gyro->y = (float)raw_gyro.y / GYRO_SCALE;
+        gyro->z = (float)raw_gyro.z / GYRO_SCALE;
     }
 
     return read_status;

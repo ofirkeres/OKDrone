@@ -113,4 +113,22 @@
 
  #define REG_WHO_AM_I            0x0075
 
+#define GYRO_FS_SEL_POS          3
+#define ACCL_FS_SEL_POS          3
+
+typedef enum gyro_fs_sel {
+    GYRO_FS_SEL_250,  // deg/s
+    GYRO_FS_SEL_500,  // deg/s
+    GYRO_FS_SEL_1000, // deg/s
+    GYRO_FS_SEL_2000  // deg/s
+} gyro_fs_sel_e;
+
+typedef enum acc_fs_sel {
+    ACCL_FS_SEL_2G,
+    ACCL_FS_SEL_4G,
+    ACCL_FS_SEL_8G,
+    ACCL_FS_SEL_16G
+} acc_fs_sel_e;
+
+
  #endif // INC_MPU_REGS_H_
