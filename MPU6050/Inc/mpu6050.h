@@ -5,19 +5,25 @@
  *      Author: ofirkeres
  */
 
- #ifndef INC_MPU_6050_H_
- #define INC_MPU_6050_H_
+#ifndef INC_MPU_6050_H_
+#define INC_MPU_6050_H_
 
- #include "stm32f7xx_hal.h"
+#include "stm32f7xx_hal.h"
 
- typedef struct axes_float {
-     float x;
-     float y;
-     float z;
- } axes_float_t;
+typedef struct axes_float {
+    float x;
+    float y;
+    float z;
+} axes_float_t;
 
- uint8_t mpu6050_Init(I2C_HandleTypeDef *hi2c);
- void mpu6050_read_acc(axes_float_t* acc);
- void mpu6050_read_gyro(axes_float_t* gyro);
+typedef struct mpu6050 {
+    axes_float_t acc;
+    axes_float_t gyro;
+} mpu6050_t;
 
- #endif /* INC_MPU_6050_H_ */
+uint8_t mpu6050_Init(I2C_HandleTypeDef *hi2c);
+void mpu6050_read_data(mpu6050_t* mpu);
+void mpu6050_read_acc(axes_float_t* acc);
+void mpu6050_read_gyro(axes_float_t* gyro);
+
+#endif /* INC_MPU_6050_H_ */
