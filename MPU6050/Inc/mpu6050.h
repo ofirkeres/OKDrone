@@ -21,9 +21,9 @@ typedef struct mpu6050 {
     axes_float_t gyro;
 } mpu6050_t;
 
-uint8_t mpu6050_Init(I2C_HandleTypeDef *hi2c);
-void mpu6050_read_data(mpu6050_t* mpu);
-void mpu6050_read_acc(axes_float_t* acc);
-void mpu6050_read_gyro(axes_float_t* gyro);
+HAL_StatusTypeDef mpu6050_Init(I2C_HandleTypeDef *hi2c);
+HAL_StatusTypeDef mpu6050_read_data(mpu6050_t* mpu);
+HAL_StatusTypeDef mpu6050_read_acc(axes_float_t* acc);
+HAL_StatusTypeDef mpu6050_read_gyro(axes_float_t* gyro);
 
 #endif /* INC_MPU_6050_H_ */
