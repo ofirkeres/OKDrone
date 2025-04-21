@@ -41,9 +41,10 @@ typedef struct axes_16 {
 
 static HAL_StatusTypeDef mpu6050_write(uint16_t reg_addr, uint8_t* data, uint8_t size);
 static HAL_StatusTypeDef mpu6050_read(uint16_t reg_addr, uint8_t* data, uint8_t size);
+static HAL_StatusTypeDef set_sample_rate(uint8_t divider);
+static HAL_StatusTypeDef set_gyro_full_scale(uint8_t scale);
+static HAL_StatusTypeDef set_acc_full_scale(uint8_t scale);
 static int16_t read_int16_be(const uint8_t* data);
-static HAL_StatusTypeDef set_gyro_full_scale(gyro_fs_sel_e scale);
-static HAL_StatusTypeDef set_acc_full_scale(acc_fs_sel_e scale);
 
 static I2C_HandleTypeDef* mpu_i2c = NULL;
 
@@ -62,7 +63,7 @@ static int16_t read_int16_be(const uint8_t* data)
     return (int16_t)(((uint16_t)data[0] << (sizeof(data[0]) * CHAR_BIT)) | data[1]);
 }
 
-static HAL_StatusTypeDef set_gyro_full_scale(gyro_fs_sel_e scale)
+static HAL_StatusTypeDef set_gyro_full_scale(uint8_t scale)
 {
     uint8_t data = 0;
 
@@ -79,11 +80,11 @@ static HAL_StatusTypeDef set_gyro_full_scale(gyro_fs_sel_e scale)
             break;
     }
 
-    data |= (uint8_t)scale << GYRO_FS_SEL_POS;
+    data |= scale << GYRO_FS_SEL_POS;
     return mpu6050_write(REG_GYRO_CONFIG, &data, sizeof(data));
 }
 
-static HAL_StatusTypeDef set_acc_full_scale(acc_fs_sel_e scale)
+static HAL_StatusTypeDef set_acc_full_scale(uint8_t scale)
 {
     uint8_t data = 0;
 
@@ -100,8 +101,16 @@ static HAL_StatusTypeDef set_acc_full_scale(acc_fs_sel_e scale)
             break;
     }
 
-    data |= (uint8_t)scale << ACCL_FS_SEL_POS;
+    data |= scale << ACCL_FS_SEL_POS;
     return mpu6050_write(REG_ACCL_CONFIG, &data, sizeof(data));
+}
+
+static HAL_StatusTypeDef set_sample_rate(uint8_t divider)
+{
+    uint8_t data = 0;
+    data |= divider & 0x07; // Extract 3 LSB Bits
+
+    return mpu6050_write(REG_SMPLRT_DIV, &data, sizeof(data));
 }
 
 HAL_StatusTypeDef mpu6050_Init(I2C_HandleTypeDef *hi2c)
@@ -127,8 +136,7 @@ HAL_StatusTypeDef mpu6050_Init(I2C_HandleTypeDef *hi2c)
             }
 
             /* Set data output rate (sample rate) to 1KHz */
-            data = 0x07;
-            write_status = mpu6050_write(REG_SMPLRT_DIV, &data, sizeof(data));
+            write_status = set_sample_rate(SMPLRT_DIV_8KHz);
             if (write_status != HAL_OK) {
                 return write_status;
             }
