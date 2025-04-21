@@ -115,5 +115,6 @@
 
 #define GYRO_FS_SEL_POS          3
 #define ACCL_FS_SEL_POS          3
+#define SLEEP_MODE_POS           6
 
 #endif // INC_MPU_REGS_H_

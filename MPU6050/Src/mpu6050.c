@@ -5,9 +5,10 @@
  *      Author: ofirkeres
  */
 
+#include <stdbool.h>
+#include <limits.h>
 #include "mpu6050.h"
 #include "mpu6050_regs.h"
-#include <limits.h>
 
 #define MPU6050_DEV_ADDR   0xD0
 #define WHO_AM_I_ADDR      (MPU6050_DEV_ADDR >> 1)
@@ -41,6 +42,7 @@ typedef struct axes_16 {
 
 static HAL_StatusTypeDef mpu6050_write(uint16_t reg_addr, uint8_t* data, uint8_t size);
 static HAL_StatusTypeDef mpu6050_read(uint16_t reg_addr, uint8_t* data, uint8_t size);
+static HAL_StatusTypeDef wake_up(void);
 static HAL_StatusTypeDef set_sample_rate(uint8_t divider);
 static HAL_StatusTypeDef set_gyro_full_scale(uint8_t scale);
 static HAL_StatusTypeDef set_acc_full_scale(uint8_t scale);
@@ -105,6 +107,24 @@ static HAL_StatusTypeDef set_acc_full_scale(uint8_t scale)
     return mpu6050_write(REG_ACCL_CONFIG, &data, sizeof(data));
 }
 
+static HAL_StatusTypeDef wake_up(void)
+{
+    /* Wrting 0 to REG_PWR_MGMT_1 does the following:
+       1. Clears SLEEP bit(since the device come up in sleep mode).
+       2. Sets CLKSEL to internal 8MHz oscillator.
+       3. Enable temperature sensor. */
+    uint8_t data = 0x00;
+    HAL_StatusTypeDef write_status = HAL_ERROR;
+    static bool first_entrance = true;
+
+    if (first_entrance) {
+        first_entrance = false;
+        write_status = mpu6050_write(REG_PWR_MGMT_1, &data, sizeof(data));
+    }
+
+    return write_status;
+}
+
 static HAL_StatusTypeDef set_sample_rate(uint8_t divider)
 {
     uint8_t data = 0;
@@ -129,8 +149,7 @@ HAL_StatusTypeDef mpu6050_Init(I2C_HandleTypeDef *hi2c)
         }
         else {
             /* Wake up the sensor - zero power management register. */
-            data = 0x00;
-            write_status = mpu6050_write(REG_PWR_MGMT_1, &data, sizeof(data));
+            write_status = wake_up();
             if (write_status != HAL_OK) {
                 return write_status;
             }
