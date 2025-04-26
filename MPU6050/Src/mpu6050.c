@@ -40,29 +40,31 @@ typedef struct axes_16 {
     int16_t z;
 } axes_16_t;
 
-static HAL_StatusTypeDef mpu6050_write(uint16_t reg_addr, uint8_t* data, uint8_t size);
-static HAL_StatusTypeDef mpu6050_read(uint16_t reg_addr, uint8_t* data, uint8_t size);
+static HAL_StatusTypeDef i2c_write(uint16_t reg_addr, uint8_t* data, uint8_t size);
+static HAL_StatusTypeDef i2c_read(uint16_t reg_addr, uint8_t* data, uint8_t size);
+static HAL_StatusTypeDef read_accl(axes_float_t* accl);
+static HAL_StatusTypeDef read_gyro(axes_float_t* gyro);
 static HAL_StatusTypeDef wake_up(void);
 static HAL_StatusTypeDef set_sample_rate(uint8_t divider);
 static HAL_StatusTypeDef set_gyro_full_scale(uint8_t scale);
-static HAL_StatusTypeDef set_acc_full_scale(uint8_t scale);
-static int16_t read_int16_be(const uint8_t* data);
+static HAL_StatusTypeDef set_accl_full_scale(uint8_t scale);
+static int16_t read_int16_be(const uint8_t* buffer);
 
 static I2C_HandleTypeDef* mpu_i2c = NULL;
 
-static HAL_StatusTypeDef mpu6050_write(uint16_t reg_addr, uint8_t* data, uint8_t size)
+static HAL_StatusTypeDef i2c_write(uint16_t reg_addr, uint8_t* data, uint8_t size)
 {
     return HAL_I2C_Mem_Write(mpu_i2c, MPU6050_DEV_ADDR, reg_addr, I2C_MEMADD_SIZE_8BIT, data, size, RDWR_TIMEOUT);
 }
 
-static HAL_StatusTypeDef mpu6050_read(uint16_t reg_addr, uint8_t* data, uint8_t size)
+static HAL_StatusTypeDef i2c_read(uint16_t reg_addr, uint8_t* data, uint8_t size)
 {
     return HAL_I2C_Mem_Read(mpu_i2c, MPU6050_DEV_ADDR, reg_addr, I2C_MEMADD_SIZE_8BIT, data, size, RDWR_TIMEOUT);
 }
 
-static int16_t read_int16_be(const uint8_t* data)
+static int16_t read_int16_be(const uint8_t* buffer)
 {
-    return (int16_t)(((uint16_t)data[0] << (sizeof(data[0]) * CHAR_BIT)) | data[1]);
+    return (int16_t)(((uint16_t)buffer[0] << (sizeof(buffer[0]) * CHAR_BIT)) | buffer[1]);
 }
 
 static HAL_StatusTypeDef set_gyro_full_scale(uint8_t scale)
@@ -83,10 +85,10 @@ static HAL_StatusTypeDef set_gyro_full_scale(uint8_t scale)
     }
 
     data |= scale << GYRO_FS_SEL_POS;
-    return mpu6050_write(REG_GYRO_CONFIG, &data, sizeof(data));
+    return i2c_write(REG_GYRO_CONFIG, &data, sizeof(data));
 }
 
-static HAL_StatusTypeDef set_acc_full_scale(uint8_t scale)
+static HAL_StatusTypeDef set_accl_full_scale(uint8_t scale)
 {
     uint8_t data = 0;
 
@@ -104,7 +106,7 @@ static HAL_StatusTypeDef set_acc_full_scale(uint8_t scale)
     }
 
     data |= scale << ACCL_FS_SEL_POS;
-    return mpu6050_write(REG_ACCL_CONFIG, &data, sizeof(data));
+    return i2c_write(REG_ACCL_CONFIG, &data, sizeof(data));
 }
 
 static HAL_StatusTypeDef wake_up(void)
@@ -119,7 +121,7 @@ static HAL_StatusTypeDef wake_up(void)
 
     if (first_entrance) {
         first_entrance = false;
-        write_status = mpu6050_write(REG_PWR_MGMT_1, &data, sizeof(data));
+        write_status = i2c_write(REG_PWR_MGMT_1, &data, sizeof(data));
     }
 
     return write_status;
@@ -130,95 +132,78 @@ static HAL_StatusTypeDef set_sample_rate(uint8_t divider)
     uint8_t data = 0;
     data |= divider & 0x07; // Extract 3 LSB Bits
 
-    return mpu6050_write(REG_SMPLRT_DIV, &data, sizeof(data));
+    return i2c_write(REG_SMPLRT_DIV, &data, sizeof(data));
 }
 
-HAL_StatusTypeDef mpu6050_Init(I2C_HandleTypeDef *hi2c)
+HAL_StatusTypeDef mpu6050_init(I2C_HandleTypeDef *hi2c)
 {
-    uint8_t who_am_i, data;
-    HAL_StatusTypeDef read_status, write_status;
+    uint8_t who_am_i;
+    HAL_StatusTypeDef status, read_status, write_status;
 
     // Save a local pointer to the mpu 6050 i2c handler
     mpu_i2c = hi2c;
 
-    read_status = mpu6050_read(REG_WHO_AM_I, &who_am_i, sizeof(who_am_i));
-
-    if (read_status == HAL_OK) {
-        if (who_am_i != WHO_AM_I_ADDR) {
-            return HAL_ERROR;
-        }
-        else {
-            /* Wake up the sensor - zero power management register. */
-            write_status = wake_up();
-            if (write_status != HAL_OK) {
-                return write_status;
-            }
-
-            /* Set data output rate (sample rate) to 1KHz */
-            write_status = set_sample_rate(SMPLRT_DIV_8KHz);
-            if (write_status != HAL_OK) {
-                return write_status;
-            }
-
-            /* Set Accelerometer configuration in REG_ACCL_CONFIG register. */
-            write_status = set_acc_full_scale(ACCL_FS_SEL_2G);
-            if (write_status != HAL_OK) {
-                return write_status;
-            }
-
-            /* Set Gyroscope configuration in REG_GYRO_CONFIG register. */
-            write_status = set_gyro_full_scale(GYRO_FS_SEL_250);
-            if (write_status != HAL_OK) {
-                return write_status;
-            }
+    if ((read_status = i2c_read(REG_WHO_AM_I, &who_am_i, sizeof(who_am_i))) != HAL_OK) {
+        status = read_status;
+    } else if (who_am_i != WHO_AM_I_ADDR) {
+        status = HAL_ERROR;
+    } else {
+        if ((write_status = wake_up()) != HAL_OK) {                                   /* Wake up the sensor - zero power management register. */
+            status = write_status;
+        } else if ((write_status = set_sample_rate(SMPLRT_DIV_8KHz)) != HAL_OK) {     /* Set data output rate (sample rate) to 1KHz */
+            status = write_status;
+        } else if ((write_status = set_accl_full_scale(ACCL_FS_SEL_2G)) != HAL_OK) {  /* Set Accelerometer configuration in REG_ACCL_CONFIG register. */
+            status = write_status;
+        } else if ((write_status = set_gyro_full_scale(GYRO_FS_SEL_250)) != HAL_OK) { /* Set Gyroscope configuration in REG_GYRO_CONFIG register. */
+            status = write_status;
         }
     }
 
-    return read_status;
+    return status;
 }
 
 HAL_StatusTypeDef mpu6050_read_data(mpu6050_t* mpu)
 {
     HAL_StatusTypeDef read_status;
 
-    read_status = mpu6050_read_acc(&mpu->acc);
+    read_status = read_accl(&mpu->accl);
 
     if (read_status == HAL_OK) {
-        read_status = mpu6050_read_gyro(&mpu->gyro);
+        read_status = read_gyro(&mpu->gyro);
     }
 
     return read_status;
 }
 
-HAL_StatusTypeDef mpu6050_read_acc(axes_float_t* acc)
+static HAL_StatusTypeDef read_accl(axes_float_t* accl)
 {
     uint8_t buffer[AXES_BUFFER_SIZE] = {0};
-    axes_16_t raw_acc;
+    axes_16_t raw_accl;
     HAL_StatusTypeDef read_status;
 
-    read_status = mpu6050_read(REG_ACCL_XOUT_H, buffer, AXES_BUFFER_SIZE);
+    read_status = i2c_read(REG_ACCL_XOUT_H, buffer, AXES_BUFFER_SIZE);
 
     if (read_status == HAL_OK) {
         /* Adding 2 bytes into 16 bit integer. */
-        raw_acc.x = read_int16_be(buffer + X_AXES_IDX);
-        raw_acc.y = read_int16_be(buffer + Y_AXES_IDX);
-        raw_acc.z = read_int16_be(buffer + Z_AXES_IDX);
+        raw_accl.x = read_int16_be(buffer + X_AXES_IDX);
+        raw_accl.y = read_int16_be(buffer + Y_AXES_IDX);
+        raw_accl.z = read_int16_be(buffer + Z_AXES_IDX);
 
-        acc->x = (float)raw_acc.x / ACCL_SCALE;
-        acc->y = (float)raw_acc.y / ACCL_SCALE;
-        acc->z = (float)raw_acc.z / ACCL_SCALE;
+        accl->x = (float)raw_accl.x / ACCL_SCALE;
+        accl->y = (float)raw_accl.y / ACCL_SCALE;
+        accl->z = (float)raw_accl.z / ACCL_SCALE;
     }
 
     return read_status;
 }
 
-HAL_StatusTypeDef mpu6050_read_gyro(axes_float_t* gyro)
+static HAL_StatusTypeDef read_gyro(axes_float_t* gyro)
 {
     uint8_t buffer[AXES_BUFFER_SIZE] = {0};
     axes_16_t raw_gyro;
     HAL_StatusTypeDef read_status;
 
-    read_status = mpu6050_read(REG_GYRO_XOUT_H, buffer, AXES_BUFFER_SIZE);
+    read_status = i2c_read(REG_GYRO_XOUT_H, buffer, AXES_BUFFER_SIZE);
 
     if (read_status == HAL_OK) {
         raw_gyro.x = read_int16_be(buffer + X_AXES_IDX);
