@@ -5,39 +5,50 @@
  *      Author: ofirkeres
  */
 
- #include "tools.h"
- #define UART_DEBUG &huart3
+/* Includes ------------------------------------------------------------------*/
+#include "tools.h"
 
- /* printf Implementation */
- int __io_putchar(int ch) {
-     HAL_UART_Transmit(UART_DEBUG, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
-     return ch;
- }
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Exported macros -----------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
 
- int _write(int file, char *ptr, int len) {
-     HAL_UART_Transmit(UART_DEBUG, (uint8_t *)ptr, len, HAL_MAX_DELAY);
-     return len;
- }
+/* Private constants ---------------------------------------------------------*/
+#define UART_DEBUG &huart3
+/* Private macros ------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private function ----------------------------------------------------------*/
 
- /* scanf Implementation */
- int _read(int file, char *ptr, int len)
- {
-     int ch = 0;
-     HAL_UART_Receive(UART_DEBUG, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
-     HAL_UART_Transmit(UART_DEBUG, (uint8_t *)&ch, 1,HAL_MAX_DELAY);
+/* printf Implementation */
+int __io_putchar(int ch) {
+    HAL_UART_Transmit(UART_DEBUG, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+    return ch;
+}
 
-     if(ch == 13)
-     {
-         ch = 10;
-         HAL_UART_Transmit(UART_DEBUG, (uint8_t *)&ch, 1,HAL_MAX_DELAY);
-     }
-     else if(ch == 8)
-     {
-         ch = 0x30;
-         HAL_UART_Transmit(UART_DEBUG, (uint8_t *)&ch, 1,HAL_MAX_DELAY);
-     }
+int _write(int file, char *ptr, int len) {
+    HAL_UART_Transmit(UART_DEBUG, (uint8_t *)ptr, len, HAL_MAX_DELAY);
+    return len;
+}
 
-     *ptr = ch;
+/* scanf Implementation */
+int _read(int file, char *ptr, int len)
+{
+    int ch = 0;
+    HAL_UART_Receive(UART_DEBUG, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+    HAL_UART_Transmit(UART_DEBUG, (uint8_t *)&ch, 1,HAL_MAX_DELAY);
 
-     return 1;
- }
+    if(ch == 13)
+    {
+        ch = 10;
+        HAL_UART_Transmit(UART_DEBUG, (uint8_t *)&ch, 1,HAL_MAX_DELAY);
+    }
+    else if(ch == 8)
+    {
+        ch = 0x30;
+        HAL_UART_Transmit(UART_DEBUG, (uint8_t *)&ch, 1,HAL_MAX_DELAY);
+    }
+
+    *ptr = ch;
+
+    return 1;
+}

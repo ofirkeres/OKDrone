@@ -5,11 +5,24 @@
  *      Author: ofirkeres
  */
 
+/* Includes ------------------------------------------------------------------*/
 #include <stdbool.h>
 #include <limits.h>
 #include "mpu6050.h"
 #include "mpu6050_regs.h"
 
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
+/* Exported macros -----------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
+
+/* Private types -------------------------------------------------------------*/
+typedef struct axes_16 {
+    int16_t x;
+    int16_t y;
+    int16_t z;
+} axes_16_t;
+/* Private constants ---------------------------------------------------------*/
 #define MPU6050_DEV_ADDR   0xD0
 #define WHO_AM_I_ADDR      (MPU6050_DEV_ADDR >> 1)
 #define RDWR_TIMEOUT       1000
@@ -33,13 +46,10 @@
 
 #define ACCL_SCALE          ACCL_SCALE_2G
 #define GYRO_SCALE          GYRO_SCALE_250DPS
-
-typedef struct axes_16 {
-    int16_t x;
-    int16_t y;
-    int16_t z;
-} axes_16_t;
-
+/* Private macros ------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+static I2C_HandleTypeDef* mpu_i2c = NULL;
+/* Private function ----------------------------------------------------------*/
 static HAL_StatusTypeDef i2c_write(uint16_t reg_addr, uint8_t* data, uint8_t size);
 static HAL_StatusTypeDef i2c_read(uint16_t reg_addr, uint8_t* data, uint8_t size);
 static HAL_StatusTypeDef read_accl(axes_float_t* accl);
@@ -50,7 +60,6 @@ static HAL_StatusTypeDef set_gyro_full_scale(uint8_t scale);
 static HAL_StatusTypeDef set_accl_full_scale(uint8_t scale);
 static int16_t read_int16_be(const uint8_t* buffer);
 
-static I2C_HandleTypeDef* mpu_i2c = NULL;
 
 static HAL_StatusTypeDef i2c_write(uint16_t reg_addr, uint8_t* data, uint8_t size)
 {

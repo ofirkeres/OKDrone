@@ -5,11 +5,14 @@
  *      Author: ofirkeres
  */
 
-#ifndef INC_MPU_6050_H_
-#define INC_MPU_6050_H_
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef INC_OKDRONE_MPU6050_H
+#define INC_OKDRONE_MPU6050_H
 
+/* Includes ------------------------------------------------------------------*/
 #include "stm32f7xx_hal.h"
 
+/* Exported types ------------------------------------------------------------*/
 typedef struct axes_float {
     float x;
     float y;
@@ -45,8 +48,15 @@ typedef enum sample_rate_div {
     SMPLRT_DIV_2KHz, // Sample Rate = Output Rate / 1 + Sample Rate Divider
     SMPLRT_DIV_1KHz  // Sample Rate = Output Rate / 1 + Sample Rate Divider
 } sample_rate_div_e;
-
+/* Exported constants --------------------------------------------------------*/
+/* Exported macros -----------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
 HAL_StatusTypeDef mpu6050_init(I2C_HandleTypeDef *hi2c);
 HAL_StatusTypeDef mpu6050_read_data(mpu6050_t* mpu);
 
-#endif /* INC_MPU_6050_H_ */
+/* Private constants ---------------------------------------------------------*/
+/* Private macros ------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private function ----------------------------------------------------------*/
+
+#endif /* INC_OKDRONE_MPU6050_H */

@@ -1,13 +1,18 @@
 /*
- * mpu6050.h
+ * mpu6050_regs.h
  *
  *  Created on: Apr 11, 2025
  *      Author: ofirkeres
  */
 
-#ifndef INC_MPU_REGS_H_
-#define INC_MPU_REGS_H_
+/* Define to prevent recursive inclusion -------------------------------------*/
+#ifndef INC_OKDRONE_MPU6050_REGS_H
+#define INC_OKDRONE_MPU6050_REGS_H
 
+/* Includes ------------------------------------------------------------------*/
+
+/* Exported types ------------------------------------------------------------*/
+/* Exported constants --------------------------------------------------------*/
 #define REG_SELF_TEST_X         0x000D
 #define REG_SELF_TEST_Y         0x000E
 #define REG_SELF_TEST_Z         0x000F
@@ -116,5 +121,13 @@
 #define GYRO_FS_SEL_POS          3
 #define ACCL_FS_SEL_POS          3
 #define SLEEP_MODE_POS           6
+/* Exported macros -----------------------------------------------------------*/
+/* Exported functions --------------------------------------------------------*/
 
-#endif // INC_MPU_REGS_H_
+/* Private constants ---------------------------------------------------------*/
+/* Private macros ------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+/* Private function ----------------------------------------------------------*/
+
+
+#endif /* INC_OKDRONE_MPU6050_REGS_H */
