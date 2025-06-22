@@ -14,6 +14,8 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
+#define WITHIN_RANGE(value, low, high) ((((low) <= (value)) && ((value) <= (high))) ? (1) : (0))
+#define LIMIT(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))
 /* Exported functions --------------------------------------------------------*/
 
 /* Private constants ---------------------------------------------------------*/
