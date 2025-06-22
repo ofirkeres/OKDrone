@@ -20,10 +20,10 @@
 
 float calc_roll(float accl_y, float accl_z)
 {
-  return atan2(accl_y, accl_z) * 180.0 / M_PI;
+    return RAD_TO_DEG(atan2(accl_y, accl_z));
 }
 
 float calc_pitch(float accl_x, float accl_y, float accl_z)
 {
-  return atan2(-accl_x, sqrt(accl_y * accl_y + accl_z * accl_z)) * 180.0 / M_PI;
+    return RAD_TO_DEG(atan2(-accl_x, sqrt(accl_y * accl_y + accl_z * accl_z)));
 }

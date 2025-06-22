@@ -15,6 +15,8 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macros -----------------------------------------------------------*/
+#define RAD_TO_DEG(radians) (radians * (180.0 / M_PI))
+#define DEG_TO_RAD(degrees) (degrees * (M_PI / 180.0))
 /* Exported functions --------------------------------------------------------*/
 float calc_roll(float accl_y, float accl_z);
 float calc_pitch(float accl_x, float accl_y, float accl_z);
