@@ -18,6 +18,7 @@ set(MX_Include_Dirs
     ${CMAKE_SOURCE_DIR}/MPU6050/Inc
     ${CMAKE_SOURCE_DIR}/Tools/Inc
     ${CMAKE_SOURCE_DIR}/IMU/Inc
+    ${CMAKE_SOURCE_DIR}/PID/Inc
     )
 
     # STM32CubeMX generated application sources
@@ -31,6 +32,7 @@ set(MX_Include_Dirs
     ${CMAKE_SOURCE_DIR}/MPU6050/Src/mpu6050.c
     ${CMAKE_SOURCE_DIR}/Tools/Src/tools.c
     ${CMAKE_SOURCE_DIR}/IMU/Src/imu.c
+    ${CMAKE_SOURCE_DIR}/PID/Src/pid.c
 )
 
 # STM32 HAL/LL Drivers
